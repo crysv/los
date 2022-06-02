@@ -1,4 +1,21 @@
 #include <system.h>
+int strcmp(const char *X, const char *Y)
+{
+    while (*X)
+    {
+        // if characters differ, or end of the second string is reached
+        if (*X != *Y) {
+            break;
+        }
+
+        // move to the next pair of characters
+        X++;
+        Y++;
+    }
+
+    // return the ASCII difference after converting `char*` to `unsigned char*`
+    return *(const unsigned char*)X - *(const unsigned char*)Y;
+}
 int numPlaces (int n) {
     int r = 1;
     while (n > 9) {
@@ -12,7 +29,7 @@ int atoi(char* str)
 {
     // Initialize result
     int res = 0;
- 
+
     // Iterate through all characters
     // of input string and update result
     // take ASCII character of corresponding digit and
@@ -21,7 +38,7 @@ int atoi(char* str)
     // digits left to update running total
     for (int i = 0; str[i] != '\0'; ++i)
         res = res * 10 + str[i] - '0';
- 
+
     // return result.
     return res;
 }
