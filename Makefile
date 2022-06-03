@@ -19,7 +19,7 @@ kernel.bin: $(OBJFILES)
 #start.o sys/arith64.o sys/acpi.o libc/libc.o font/font.o drv/scrn.o libc/printf.o main.o sys/gdt.o sys/idt.o sys/isrs.o sys/pci.o sys/irq.o drv/timer.o drv/kb.o drv/atapio.o drv/lfs.o
 
 %.o: %.c
-	i386-elf-gcc -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include -c -o $@ $<
+	i386-elf-gcc -Wall -Wno-implicit-function-declaration -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -I./include -c -o $@ $<
 
 %.o: %.asm
 	nasm -f elf32 -o $@ $<

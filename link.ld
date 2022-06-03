@@ -1,4 +1,3 @@
-OUTPUT_FORMAT("binary")
 ENTRY(start)
 phys = 0x00100000;
 SECTIONS
@@ -22,7 +21,7 @@ SECTIONS
   .unicode : AT (phys + (unicode - code))
   {
     unicode_buffer = .;
-    . += 0x20000; 
+    . += 0x20000;
     . = ALIGN(4096);
   }
   .bss : AT(phys + (bss - code))

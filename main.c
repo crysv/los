@@ -49,12 +49,12 @@ bool cpuHasMSR()
    __get_cpuid(1, &a,unused,unused, &d);
    return d & CPUID_FLAG_MSR;
 }
- 
+
 void cpuGetMSR(uint32_t msr, uint32_t *lo, uint32_t *hi)
 {
    asm volatile("rdmsr" : "=a"(*lo), "=d"(*hi) : "c"(msr));
 }
- 
+
 void cpuSetMSR(uint32_t msr, uint32_t lo, uint32_t hi)
 {
    asm volatile("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
@@ -68,8 +68,10 @@ struct cpuid_t cpuid;
 char *fb;
 int scanline;
 int height;
+void* exec_addr;
 extern char start[];
 extern char end[];
+extern int sectors_per_cluster;
 extern int kbdisplay;
 extern int csr_y;
 extern struct file* opendir;
@@ -92,9 +94,9 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     if(cpuid.max)
     {
         if (check_apic()) cpuid.apic = true; else cpuid.apic = false;
-        if (cpuHasMSR()) cpuid.msr = true; else cpuid.apic = false;
+        if (cpuHasMSR()) cpuid.msr = true; else cpuid.msr = false;
     }
-    
+
     acpi_init();
     gdt_install();
     idt_install();
@@ -108,22 +110,22 @@ void main (multiboot_info_t* mbd, unsigned int magic)
 
 //    i = 10 / 0;
 //    putch(i);
-    
+
     int i;
-    for(i = 0; i < mbd->mmap_length; 
-        i += sizeof(multiboot_memory_map_t)) 
+    for(i = 0; i < mbd->mmap_length;
+        i += sizeof(multiboot_memory_map_t))
     {
-        multiboot_memory_map_t* mmmt = 
+        multiboot_memory_map_t* mmmt =
             (multiboot_memory_map_t*) (mbd->mmap_addr + i);
- 
+
         //printf_("Start Addr: %x ",mmmt->addr);
         //printf_("| Length: %x ",  mmmt->len);
         //printf_("| Size: %x ",    mmmt->size);
         //printf_("| Type: %d \n",  mmmt->type);
         if(mmmt->type == MULTIBOOT_MEMORY_AVAILABLE) {
-            /* 
+            /*
              * Do something with this memory block!
-             * BE WARNED that some of memory shown as availiable is actually 
+             * BE WARNED that some of memory shown as availiable is actually
              * actively being used by the kernel! You'll need to take that
              * into account before writing to memory!
              */
@@ -133,12 +135,12 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     alloc_install();
     listmem();
     checkAllBuses();
-    
+
     ATA_int_disable();
     uint8_t* target;
     int lba = 0x0;
     read_sectors_ATA_PIO(target,0, lba, 1);
-    
+
     i = 0;
     /*while(i < 512)
     {
@@ -146,6 +148,7 @@ void main (multiboot_info_t* mbd, unsigned int magic)
         i++;
     }*/
     fat_set(target);
+    exec_addr = kmalloc_resv(0x200000,512*sectors_per_cluster);
     puts("loaded\n");
     fat_load_dir(root(),1);
     shell_init();

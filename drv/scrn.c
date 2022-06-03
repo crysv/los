@@ -32,9 +32,9 @@ void psf_init()
     /* is there a unicode table? */
     if (font->flags) {
         unicode = NULL;
-        return; 
+        return;
     }
- 
+
     /* get the offset of the table */
     char *s = (char *)(
     (unsigned char*)&_binary_font_psf_start +
@@ -71,7 +71,7 @@ void psf_init()
     }
 }
 #define PSF_FONT_MAGIC 0x864ab572
- 
+
 /* the linear framebuffer */
 extern char *fb;
 /* number of bytes in each line, it's possible it's not screen width * bytesperpixel! */
@@ -79,9 +79,9 @@ extern int scanline;
 extern int height;
 /* import our font that's in the object file we've created above */
 extern char _binary_font_psf_start;
- 
+
 #define PIXEL uint32_t   /* pixel pointer */
- 
+
 void putche(
     /* note that this is int, not char as it's a unicode character */
     unsigned short int c,
@@ -154,24 +154,7 @@ void scroll(void)
 *  on the screen under the last character pressed! */
 void move_csr(void)
 {
-    unsigned temp;
-
-    /* The equation for finding the index in a linear
-    *  chunk of memory can be represented by:
-    *  Index = [(y * width) + x] */
-    temp = csr_y * 80 + csr_x;
-
-    /* This sends a command to indicies 14 and 15 in the
-    *  CRT Control Register of the VGA controller. These
-    *  are the high and low bytes of the index that show
-    *  where the hardware cursor is to be 'blinking'. To
-    *  learn more, you should look up some VGA specific
-    *  programming documents. A great start to graphics:
-    *  http://www.brackeen.com/home/vga */
-    outportb(0x3D4, 14);
-    outportb(0x3D5, temp >> 8);
-    outportb(0x3D4, 15);
-    outportb(0x3D5, temp);
+    
 }
 
 /* Clears the screen */
