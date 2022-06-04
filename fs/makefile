@@ -1,7 +1,21 @@
-all:
-	i386-elf-gcc -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fno-pic -ffunction-sections start.c -c -o start.o
-	#i386-elf-gcc -ffunction-sections -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fno-pic main.c -c -o main.o
-	#objcopy --remove-section .comment main.o
-	objcopy --remove-section .comment start.o
-	i386-elf-ld -Tlinker.ld start.o -o main.bin
+SRCFILES := $(shell find "." -type f -name "*.c")
+ASMFILES := $(patsubst %.c,%.s,$(SRCFILES))
+OBJFILES := $(patsubst %.c,%.o,$(SRCFILES))
+all: s bin
+	i386-elf-ld -Tlinker.ld start.o main.o --print-map -o main.bin
 	objdump -b binary --adjust-vma=0x200000 -D main.bin -m i386
+
+%.s: %.c
+	i386-elf-gcc -ffunction-sections -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fno-pic $< -c -S -o $@
+
+%.o: %.s
+	i386-elf-gcc -ffunction-sections -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fno-pic $< -c -o $@
+	objcopy --remove-section .comment $@
+
+s: $(ASMFILES)
+	./util/rgot
+
+bin: $(OBJFILES)
+
+clean:
+	rm $(OBJFILES) $(ASMFILES)

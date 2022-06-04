@@ -16,6 +16,7 @@ img: kernel.bin
 kernel.bin: $(OBJFILES)
 #start.o sys/arith64.o sys/acpi.o libc/libc.o font/font.o drv/scrn.o libc/printf.o main.o sys/gdt.o sys/idt.o sys/isrs.o sys/pci.o sys/irq.o drv/timer.o drv/kb.o drv/atapio.o drv/lfs.o
 	ld -melf_i386 -T link.ld -o kernel.bin $(OBJFILES)
+	nm kernel.bin | grep " T " | awk '{ print $1" "$3 }' > kernel.sym
 #start.o sys/arith64.o sys/acpi.o libc/libc.o font/font.o drv/scrn.o libc/printf.o main.o sys/gdt.o sys/idt.o sys/isrs.o sys/pci.o sys/irq.o drv/timer.o drv/kb.o drv/atapio.o drv/lfs.o
 
 %.o: %.c

@@ -11,5 +11,6 @@ SECTIONS
     .text :
     {
         *(.*)
+        main = main;
     }
 }

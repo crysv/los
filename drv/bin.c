@@ -1,8 +1,6 @@
 #include <system.h>
 extern sectors_per_cluster;
-extern void puts(char* text);
-extern void* kmalloc(int size);
-extern void kfree(void* addr);
+#include <libfeat.h>
 //extern void puts();
 struct vptrStrMap
 {
