@@ -108,9 +108,6 @@ void main (multiboot_info_t* mbd, unsigned int magic)
 
     __asm__ __volatile__ ("sti");
 
-//    i = 10 / 0;
-//    putch(i);
-
     int i;
     for(i = 0; i < mbd->mmap_length;
         i += sizeof(multiboot_memory_map_t))
@@ -134,6 +131,9 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     }
     alloc_install();
     listmem();
+    
+    paging_install();
+
     checkAllBuses();
 
     ATA_int_disable();
@@ -153,7 +153,7 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     fat_load_dir(root(),1);
     shell_init();
     kbdisplay = 1;
-    int* val = kmalloc(sizeof(int));
+    int* val = kmalloc(sizeof(int)*0x1000);
     kfree(val);
     for (;;) shell_respond();
 }

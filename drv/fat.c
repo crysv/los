@@ -27,7 +27,7 @@ int table_val(int active_cluster)
     unsigned int fat_offset = active_cluster * 2;
     unsigned int fat_sector = first_fat_sector + (fat_offset / sector_size);
     unsigned int ent_offset = fat_offset % sector_size;
- 
+
     //at this point you need to read from sector "fat_sector" on the disk into "FAT_table".
 
     read_sectors_ATA_PIO(FAT_table,0, fat_sector, 1);
@@ -58,18 +58,18 @@ void fat_set(struct fat_BS* fat_boot)
     first_root_dir_sector = fat_boot->reserved_sector_count + (fat_boot->table_count * fat_size);
     total_clusters = data_sectors / fat_boot->sectors_per_cluster;
     sectors_per_cluster = fat_boot->sectors_per_cluster;
-    if (sector_size == 0) 
+    if (sector_size == 0)
     {
         fat_type = 0;
     }
-    else if(total_clusters < 4085) 
+    else if(total_clusters < 4085)
     {
         fat_type = 12;
-    } 
-    else if(total_clusters < 65525) 
+    }
+    else if(total_clusters < 65525)
     {
         fat_type = 16;
-    } 
+    }
     else
     {
         fat_type = 32;
@@ -90,10 +90,7 @@ struct file* fat_dir_index(int sector,int i)
     //printf_("\n%s cluster:%x",&target[i*0x40+0x20],((uint16_t)target[(i*0x40+0x20)+0x1B] << 8) | target[(i*0x40+0x20)+0x1A]);
     //if (((uint16_t)target[(i*0x20)+0x1B] << 8) | target[(i*0x20)+0x1A]!=0) cluster_chain(((uint16_t)target[(i*0x20)+0x1B] << 8) | target[(i*0x20)+0x1A]);
     openfile.cluster = ((uint16_t)target[(i*0x40+0x20)+0x1B] << 8) | target[(i*0x40+0x20)+0x1A];
-    if (target[(i*0x40+0x20)+0xb]&0x10)
-    {
-        openfile.directory = true;
-    } else openfile.directory = false;
+    openfile.directory = (target[(i*0x40+0x20)+0xb]&0x10);
     for(int e = 0;e < 8;e++) openfile.name[e] = target[(i*0x40+0x20)+e];
     for(int e = 8;e < 11;e++) openfile.ext[e-8] = target[(i*0x40+0x20)+e];
     //(target[i*0x40+0x20]==0x0)
@@ -120,15 +117,12 @@ int fat_load_dir(int sector,int print)
             //printf_("\n%s cluster:%x",&target[i*0x40+0x20],((uint16_t)target[(i*0x40+0x20)+0x1B] << 8) | target[(i*0x40+0x20)+0x1A]);
             //if (((uint16_t)target[(i*0x20)+0x1B] << 8) | target[(i*0x20)+0x1A]!=0) cluster_chain(((uint16_t)target[(i*0x20)+0x1B] << 8) | target[(i*0x20)+0x1A]);
             opendir[i].cluster = ((uint16_t)target[(i*0x40+0x20)+0x1B] << 8) | target[(i*0x40+0x20)+0x1A];
-            if (target[(i*0x40+0x20)+0xb]&0x10)
-            {
-                opendir[i].directory = true;
-            } else opendir[i].directory = false;
+            openfile.directory = (target[(i*0x40+0x20)+0xb]&0x10);
             for(int e = 0;e < 8;e++) opendir[i].name[e] = target[(i*0x40+0x20)+e];
             for(int e = 8;e < 11;e++) opendir[i].ext[e-8] = target[(i*0x40+0x20)+e];
             printf_("name:%s ext:%s cluster:%x(%d)\n",opendir[i].name,opendir[i].ext,opendir[i].cluster,opendir[i].cluster);
         }
-        
+
     }
     else{ puts("fat16 only");return; }
 }

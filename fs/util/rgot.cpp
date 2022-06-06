@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include "../../include/libfeat.h"
 void removeChar(char *str, char garbage) {
 
@@ -23,7 +24,25 @@ char *strremove(char *str, const char *sub) {
     }
     return str;
 }
-int main(void)
+/* when return 1, scandir will put this dirent to the list */
+ static int parse_ext(const struct dirent *dir)
+ {
+   if(!dir)
+     return 0;
+
+   if(dir->d_type == DT_REG) { /* only deal with regular file */
+       const char *ext = strrchr(dir->d_name,'.');
+       if((!ext) || (ext == dir->d_name))
+         return 0;
+       else {
+         if(strcmp(ext, ".s") == 0)
+           return 1;
+       }
+   }
+
+   return 0;
+ }
+int rgot(char* name)
 {
     FILE * fp;
     FILE * outfp;
@@ -31,10 +50,13 @@ int main(void)
     size_t len = 0;
     ssize_t read;
 
-    fp = fopen("main.s", "r");
+    fp = fopen(name, "r");
     if (fp == NULL)
         exit(EXIT_FAILURE);
-    outfp = fopen("main.mod.s" ,"a");
+    char oldname[32];
+    strcpy(oldname,name);
+    strcat(name,".mod");
+    outfp = fopen(name,"a");
     while ((read = getline(&line, &len, fp)) != -1) {
         if (strstr(line, "@GOT"))
         {
@@ -60,13 +82,32 @@ int main(void)
     if (line)
         free(line);
 
-    if (remove("main.s") !=0) {
+    if (remove(oldname) !=0) {
         printf("The file is not deleted.\n");
     }
 
-    if (rename("main.mod.s","main.s") !=0) {
+    if (rename(name,oldname) !=0) {
         printf("The file is not renamed.\n");
     }
+}
+int main(void)
+{
+    struct dirent **namelist;
+    int n;
 
-    exit(EXIT_SUCCESS);
+    n = scandir(".", &namelist, parse_ext, alphasort);
+    if (n < 0) {
+        perror("scandir");
+        return 1;
+    }
+    else {
+        while (n--) {
+            printf("%s\n", namelist[n]->d_name);
+            rgot(namelist[n]->d_name);
+            free(namelist[n]);
+        }
+        free(namelist);
+    }
+
+    return 0;
 }

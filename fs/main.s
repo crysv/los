@@ -2,7 +2,7 @@
 	.text
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .LC0:
-	.string	"hello\n"
+	.string	"hello"
 	.section	.text.main,"ax",@progbits
 	.globl	main
 	.type	main, @function
@@ -14,7 +14,11 @@ main:
 	movl	%esp, %ebp
 	pushl	%ecx
 	subl	$16, %esp
-	pushl	$.LC0
+	pushl	$100
+	call	*kmalloc
+	movl	%eax, (%esp)
+	call	*kfree
+	movl	$.LC0, (%esp)
 	call	*puts
 	call	some_call
 	addl	$16, %esp

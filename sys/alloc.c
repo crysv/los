@@ -1,15 +1,20 @@
 #include <system.h>
 #define BLOCKSIZE 0x1000
 #define BIT(shift) (1<<shift)
-#define FREE_ALLOC 0x0
-#define SINGLE_ALLOC 0x1
+#define ALLOC_FREE 0x0
 #define RESERVED 0xff
+#define ALLOC_BODY 0xfe
 #define ERR_NOMEM 0x0
 uint32_t hmem;
 extern char end[];
 uint8_t* bitmap;
 uint8_t* mem;
 uint32_t blocks;
+struct area
+{
+    uint32_t start;
+    uint32_t end;
+};
 void valid_space(multiboot_memory_map_t* mem)
 {
     if(mem->addr = 0x10000)
@@ -43,15 +48,14 @@ void kfree(void* addr)
     if (addr < mem) {puts("kfree: address below range\n");return;}
     int index = ((int)addr-(int)mem)/BLOCKSIZE;
     if (index > blocks) {puts("kfree: address not in range\n");return;}
+#define ALLOC_DEBUG
 #ifdef ALLOC_DEBUG
     printf_("kfree: index:%x",index);
     printf_(" addr:%x",mem + index*BLOCKSIZE);
+    printf_(" size:%d\n",bitmap[index]);
 #endif
-    if (bitmap[index]==0x1) {
-#ifdef ALLOC_DEBUG
-        puts(" size:1\n");
-#endif
-        bitmap[index] = FREE_ALLOC;
+    for (int i = 0;i < bitmap[index];i++) {
+        bitmap[index+i] = ALLOC_FREE;
     }
 }
 void* kmalloc_resv(int addr,int size)
@@ -92,47 +96,52 @@ void* kmalloc(int size)
         size+=BLOCKSIZE;
     }
     request = size>>12;
-    if (request==1)
+    /*if (request==1)
     {
         for(int i = 0;i<blocks;i++)
         {
-            if(bitmap[i] == FREE_ALLOC)
+            if(bitmap[i] == ALLOC_FREE)
             {
 #ifdef ALLOC_DEBUG
                 printf_("kmalloc: index:%x",i);
                 printf_(" addr:%x",mem + i*BLOCKSIZE);
                 puts(" size:1\n");
 #endif
-                bitmap[i] = SINGLE_ALLOC;
+                bitmap[i] = 0x1;
                 return mem + i*BLOCKSIZE;
             }
         }
-        puts("kmalloc: no memory\n");
-        return ERR_NOMEM;
     }
-    else puts("kmalloc: greater than 1 block\n");
-    /*{
-        for(int i = 0;i<blocks;i++)
+    else
+    {*/
+    for(int i = 0;i<blocks;i++)
+    {
+        if (bitmap[i]==ALLOC_FREE)
         {
-            if (bitmap[i]==0)
+            int old = i;
+            int oldold = i;
+            int count = 1;
+            for(;i<blocks;i++)
             {
-                int old = i;
-                int oldold = i;
-                int count = 0;
-                for(;i<blocks;i++)
+                if (bitmap[i]!=ALLOC_FREE) break;
+                if (count == request)
                 {
-                    if (bitmap[i]!=0) break;
-                    if (count == request)
+                    for(;old<i+1;old++)
                     {
-                        for(;old<i+1;old++)
-                        {
-                            bitmap[old] = 0x1;
-                        }
-                        return bitmap + oldold*BLOCKSIZE;
+                        bitmap[old] = ALLOC_BODY;
                     }
-                    count++;
+#ifdef ALLOC_DEBUG
+                    printf_("kmalloc: index:%x",oldold);
+                    printf_(" addr:%x",mem + oldold*BLOCKSIZE);
+                    printf_(" size:%d\n",request);
+#endif
+                    bitmap[oldold] = request;
+                    return mem + oldold*BLOCKSIZE;
                 }
+                count++;
             }
         }
-    }*/
+    }
+    puts("kmalloc: no memory\n");
+    return ERR_NOMEM;
 }
