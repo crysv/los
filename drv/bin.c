@@ -32,10 +32,9 @@ void* __attribute__((stdcall)) symbol(char* name)
 {
     *ptr = symbol(name);
 }*/
-extern void* exec_addr;
 void binexec(int clus)
 {
-    uint8_t volatile * volatile target = exec_addr;
+    uint8_t volatile * volatile target = kmalloc_addr(0x400000,512*sectors_per_cluster);
     read_sectors_ATA_PIO(target,0, cluster2sector(clus), sectors_per_cluster);
     int (*entry)(uint32_t* a)__attribute__((fastcall)) = target;
     setfuncs();

@@ -4,7 +4,7 @@ OBJFILES := $(patsubst %.c,%.o,$(SRCFILES))
 #--print-map
 all: s bin
 	i386-elf-ld -Tlinker.ld $(OBJFILES) -o main.bin
-	objdump -b binary --adjust-vma=0x200000 -D main.bin -m i386
+	objdump -b binary --adjust-vma=0x400000 -D main.bin -m i386
 
 %.s: %.c
 	i386-elf-gcc -ffunction-sections -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fno-pic $< -c -S -o $@

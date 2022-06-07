@@ -2,9 +2,9 @@
 #define BLOCKSIZE 0x1000
 #define BIT(shift) (1<<shift)
 #define ALLOC_FREE 0x0
-#define RESERVED 0xff
-#define ALLOC_BODY 0xfe
+#define ALLOC_BODY 0xff
 #define ERR_NOMEM 0x0
+//#define ALLOC_DEBUG
 uint32_t hmem;
 extern char end[];
 uint8_t* bitmap;
@@ -19,13 +19,15 @@ void valid_space(multiboot_memory_map_t* mem)
 {
     if(mem->addr = 0x10000)
     {
-        hmem = mem->len;
+        if (mem->len<0x100000000-0x10000)
+             hmem = mem->len-0x390000;
+        else hmem = 0x100000000-0x400000;
     }
 }
 
 void alloc_install()
 {
-    bitmap = end;
+    bitmap = 0x400000-(hmem/BLOCKSIZE);
     blocks = hmem/BLOCKSIZE;
     for(int i = 0;i<blocks;i++)
     {
@@ -48,7 +50,6 @@ void kfree(void* addr)
     if (addr < mem) {puts("kfree: address below range\n");return;}
     int index = ((int)addr-(int)mem)/BLOCKSIZE;
     if (index > blocks) {puts("kfree: address not in range\n");return;}
-#define ALLOC_DEBUG
 #ifdef ALLOC_DEBUG
     printf_("kfree: index:%x",index);
     printf_(" addr:%x",mem + index*BLOCKSIZE);
@@ -58,7 +59,7 @@ void kfree(void* addr)
         bitmap[index+i] = ALLOC_FREE;
     }
 }
-void* kmalloc_resv(int addr,int size)
+/*void* kmalloc_resv(int addr,int size)
 {
     if (addr&(BLOCKSIZE-1))
     {
@@ -85,8 +86,11 @@ void* kmalloc_resv(int addr,int size)
     printf_(" size:%x\n",((end-addr)/BLOCKSIZE)+1);
 #endif
     return oldaddr;
-}
-void* kmalloc(int size)
+}*/
+extern uint32_t page_directory[1024];
+extern
+//uint8_t allocation[1024*1024];
+void* kmalloc_addr(void* addr,int size)
 {
     if (!size) return 0x0;
     int request;
@@ -96,24 +100,6 @@ void* kmalloc(int size)
         size+=BLOCKSIZE;
     }
     request = size>>12;
-    /*if (request==1)
-    {
-        for(int i = 0;i<blocks;i++)
-        {
-            if(bitmap[i] == ALLOC_FREE)
-            {
-#ifdef ALLOC_DEBUG
-                printf_("kmalloc: index:%x",i);
-                printf_(" addr:%x",mem + i*BLOCKSIZE);
-                puts(" size:1\n");
-#endif
-                bitmap[i] = 0x1;
-                return mem + i*BLOCKSIZE;
-            }
-        }
-    }
-    else
-    {*/
     for(int i = 0;i<blocks;i++)
     {
         if (bitmap[i]==ALLOC_FREE)
@@ -136,7 +122,9 @@ void* kmalloc(int size)
                     printf_(" size:%d\n",request);
 #endif
                     bitmap[oldold] = request;
-                    return mem + oldold*BLOCKSIZE;
+                    if (addr == 0)
+                         return page_addr(mem + oldold*BLOCKSIZE,mem + oldold*BLOCKSIZE,3,request);
+                    else return page_addr(mem + oldold*BLOCKSIZE,addr,3,request);
                 }
                 count++;
             }
@@ -144,4 +132,8 @@ void* kmalloc(int size)
     }
     puts("kmalloc: no memory\n");
     return ERR_NOMEM;
+}
+void* kmalloc(int size)
+{
+    kmalloc_addr(0,size);
 }

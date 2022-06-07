@@ -68,13 +68,15 @@ struct cpuid_t cpuid;
 char *fb;
 int scanline;
 int height;
-void* exec_addr;
 extern char start[];
 extern char end[];
 extern int sectors_per_cluster;
 extern int kbdisplay;
 extern int csr_y;
 extern struct file* opendir;
+#define MAX(x,y) ((x>y)?x:y)
+extern uint32_t exec_page_table[1024];
+extern bool table_present[1024];
 void main (multiboot_info_t* mbd, unsigned int magic)
 {
     //init_video();
@@ -108,6 +110,7 @@ void main (multiboot_info_t* mbd, unsigned int magic)
 
     __asm__ __volatile__ ("sti");
 
+    int endmem;
     int i;
     for(i = 0; i < mbd->mmap_length;
         i += sizeof(multiboot_memory_map_t))
@@ -126,13 +129,14 @@ void main (multiboot_info_t* mbd, unsigned int magic)
              * actively being used by the kernel! You'll need to take that
              * into account before writing to memory!
              */
+             endmem = MAX(mmmt->len+mmmt->addr,endmem);
              valid_space(mmmt);
         }
     }
     alloc_install();
+    paging_install(endmem);
+
     listmem();
-    
-    paging_install();
 
     checkAllBuses();
 
@@ -148,7 +152,6 @@ void main (multiboot_info_t* mbd, unsigned int magic)
         i++;
     }*/
     fat_set(target);
-    exec_addr = kmalloc_resv(0x200000,512*sectors_per_cluster);
     puts("loaded\n");
     fat_load_dir(root(),1);
     shell_init();

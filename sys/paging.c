@@ -1,7 +1,9 @@
 #include <system.h>
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t kernel_page_table[1024] __attribute__((aligned(4096)));
+uint32_t page_page_table[1024] __attribute__((aligned(4096)));
 uint32_t framebuffer_table[1024] __attribute__((aligned(4096)));
+bool table_present[1024] = {false};
 extern void loadPageDirectory(unsigned int*);
 extern void enablePaging();
 extern char *fb;
@@ -22,7 +24,48 @@ struct page_addr virt2page(uint32_t virt)
     struct page_addr address = {remainder,idx,table};
     return address;
 }
-void paging_install()
+#define invlpg(address) \
+   __asm volatile ( "invlpg %0" : : "m" (*(char *)(address)) );
+void dir_ent_inval(int index)
+{
+    for (int i = 0;i < 1024;i++)
+         invlpg(index*(1024*0x1000)+i*0x1000);
+}
+/*void table_addr(int index, uint32_t addr)
+{
+    page_directory[index] &= 0xfff;
+    page_directory[index] |= addr;
+    dir_ent_inval(index);
+}
+void table_attr(int index, int attr)
+{
+    page_directory[index] &= ~(0xfff);
+    page_directory[index] |= attr;
+    dir_ent_inval(index);
+}
+void table_set(int index,void* addr,int attr)
+{
+    page_directory[index] = (unsigned int)addr | attr;
+    dir_ent_inval(index);
+}*/
+void* page_addr(void* phys,void* addr,int attr,int size)
+{
+    struct page_addr paddr = virt2page(addr);
+    uint32_t adr = addr;
+    uint32_t end = addr+(size*0x1000);
+    for (;addr < end;addr+=0x1000,phys+=0x1000)
+    {
+        struct page_addr page = virt2page(addr);
+        if (!table_present[page.table]) return 0;
+        uint32_t table_value = page_directory[page.table];
+        uint32_t* page_table = table_value & ~(0xfff);
+        page_table[page.page] = (unsigned int)phys | attr;
+        invlpg(addr);
+    }
+    //printf_("page: addr:%x table:%x page:%d\n",adr,paddr.table,paddr.page);
+    return adr;
+}
+void paging_install(uint32_t endmem)
 {
     //set each entry to not present
     unsigned int i;
@@ -44,6 +87,13 @@ void paging_install()
         // Those bits are used by the attributes ;)
         kernel_page_table[i] = (i * 0x1000) | 3; // attributes: supervisor level, read/write, present.
     }
+
+    for (i = 0; i < 1024; i++)
+    {
+        // As the address is page aligned, it will always leave 12 bits zeroed.
+        // Those bits are used by the attributes ;)
+        page_page_table[i] = 0x2; // attributes: supervisor level, read/write, not present.
+    }
     struct page_addr fbp = virt2page(fb);
     for (i = 0; i < 1024; i++)
     {
@@ -53,8 +103,28 @@ void paging_install()
     }
     // attributes: supervisor level, read/write, present
     page_directory[0] = ((unsigned int)kernel_page_table) | 3;
+    page_directory[1] = ((unsigned int)page_page_table) | 3;
     page_directory[fbp.table] = ((unsigned int)framebuffer_table) | 3;
-    puts("paging");
+    table_present[0] = true;
+    table_present[1] = true;
+    table_present[fbp.table] = true;
+    puts("paging enable:\n");
     loadPageDirectory(page_directory);
     enablePaging();
+    struct page_addr tables = virt2page(endmem);
+    uint32_t* alloc_tables = kmalloc(sizeof(uint32_t)*1024*tables.table);
+    for (i = 2; i < tables.table;i++)
+    {
+        if (i != fbp.table)
+        {
+            uint32_t* currtable = &alloc_tables[(i-2)*1024];
+            for (i = 0; i < 1024; i++)
+            {
+                // As the address is page aligned, it will always leave 12 bits zeroed.
+                // Those bits are used by the attributes ;)
+                currtable[i] = 0x2; // attributes: supervisor level, read/write, not present.
+            }
+            page_directory[i] = currtable;
+        }
+    }
 }

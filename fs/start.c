@@ -16,10 +16,12 @@ int __attribute__((fastcall)) start(uint32_t* a)
 	puts = symbol("puts");
 	kmalloc = symbol("kmalloc");
 	kfree = symbol("kfree");
+#ifdef DEBUG
 	outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
+#endif
 	__asm__ __volatile__ ("call main");
 }
 void some_call()
 {
-
+    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
 }

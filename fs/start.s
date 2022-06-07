@@ -36,6 +36,19 @@ start:
 	pushl	$.LC2
 	call	*%ebx
 	movl	%eax, kfree
+/APP
+/  22 "start.c" 1
+	call main
+/  0 "" 2
+/NO_APP
+	addl	$20, %esp
+	popl	%ebx
+	ret
+	.size	start, .-start
+	.section	.text.some_call,"ax",@progbits
+	.globl	some_call
+	.type	some_call, @function
+some_call:
 	movl	$-30208, %edx
 	movl	%edx, %eax
 /APP
@@ -48,18 +61,7 @@ start:
 /  11 "start.c" 1
 	outw %ax, %dx
 /  0 "" 2
-/  20 "start.c" 1
-	call main
-/  0 "" 2
 /NO_APP
-	addl	$20, %esp
-	popl	%ebx
-	ret
-	.size	start, .-start
-	.section	.text.some_call,"ax",@progbits
-	.globl	some_call
-	.type	some_call, @function
-some_call:
 	ret
 	.size	some_call, .-some_call
 	.globl	kfree

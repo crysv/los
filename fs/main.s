@@ -2,7 +2,7 @@
 	.text
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .LC0:
-	.string	"hello"
+	.string	"hello\n"
 	.section	.text.main,"ax",@progbits
 	.globl	main
 	.type	main, @function
