@@ -23,6 +23,7 @@ extern void _irq12();
 extern void _irq13();
 extern void _irq14();
 extern void _irq15();
+extern void _syscall_stub();
 
 /* This array is actually an array of function pointers. We use
 *  this to handle custom IRQ handlers for a given IRQ */
@@ -90,6 +91,8 @@ void irq_install()
     idt_set_gate(45, (unsigned)_irq13, 0x08, 0x8E);
     idt_set_gate(46, (unsigned)_irq14, 0x08, 0x8E);
     idt_set_gate(47, (unsigned)_irq15, 0x08, 0x8E);
+
+    idt_set_gate(0x7f,(unsigned)_syscall_stub,0x08,0xee);
 }
 
 /* Each of the IRQ ISRs point to this function, rather than

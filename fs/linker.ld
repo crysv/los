@@ -1,9 +1,9 @@
 OUTPUT_FORMAT("binary")
 ENTRY(start)
-phys = 0x400000;
+phys = 0x8000000;
 SECTIONS
 {
-    . = 0x400000;
+    . = 0x8000000;
     .text.start :
     {
         *(.text.start)

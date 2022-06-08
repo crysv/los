@@ -34,7 +34,8 @@ void* __attribute__((stdcall)) symbol(char* name)
 }*/
 void binexec(int clus)
 {
-    uint8_t volatile * volatile target = kmalloc_addr(0x400000,512*sectors_per_cluster);
+    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
+    uint8_t volatile * volatile target = kmalloc_addr(0x8000000,512*sectors_per_cluster);
     read_sectors_ATA_PIO(target,0, cluster2sector(clus), sectors_per_cluster);
     int (*entry)(uint32_t* a)__attribute__((fastcall)) = target;
     setfuncs();

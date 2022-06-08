@@ -31,7 +31,7 @@ mboot:
     dd MULTIBOOT_HEADER_MAGIC
     dd MULTIBOOT_HEADER_FLAGS
     dd MULTIBOOT_CHECKSUM
-    
+
     ; AOUT kludge - must be physical addresses. Make a note of these:
     ; The linker script fills in the data for these ones!
     dd mboot
@@ -39,7 +39,7 @@ mboot:
     dd bss
     dd end
     dd start
-    
+
     ;video info
     dd 0
     dd 0
@@ -51,7 +51,9 @@ stublet:
     push eax
     push ebx
     call main
-    jmp $
+return:
+    hlt
+    jmp return
 
 ;hlt
 global hlt
@@ -59,13 +61,38 @@ hlt:
     hlt
     ret
 
+; C declaration: void flush_tss(void);
+global flush_tss
+flush_tss:
+    mov ax, (5 * 8) | 0 ; fifth 8-byte selector, symbolically OR-ed with 0 to set the RPL (requested privilege level).
+    ltr ax
+    ret
+
+global jump_usermode
+extern user
+jump_usermode:
+	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax ; SS is handled by iret
+
+	; set up the stack frame iret expects
+	mov eax, esp
+	push (4 * 8) | 3 ; data selector
+	push eax ; current esp
+	pushf ; eflags
+	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
+	push user ; instruction address to return to
+	iret
+
 ;set paging directory
 global loadPageDirectory
 loadPageDirectory:
 push ebp
-mov  ebp, esp, 
+mov  ebp, esp,
 mov eax, [8+esp]
-mov cr3, eax 
+mov cr3, eax
 mov esp, ebp
 pop ebp
 ret
@@ -559,6 +586,46 @@ irq_common_stub:
     add esp, 8
     iret
 
+global _syscall_stub
+extern _syscall
+_syscall_stub:
+    ; already on stack: ss, sp, flags, cs, ip.
+    ; need to push ax, gs, fs, es, ds, -ENOSYS, bp, di, si, dx, cx, and bx
+    push eax
+    push gs
+    push fs
+    push es
+    push ds
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+    push esp
+    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    pop eax
+    call _syscall
+    add esp, 4
+    pop ebx
+    pop ecx
+    pop edx
+    pop esi
+    pop edi
+    pop ebp
+    pop ds
+    pop es
+    pop fs
+    pop gs
+    add esp, 4
+    iretd
+
+
 ; Here is the definition of our BSS section. Right now, we'll use
 ; it just to store the stack. Remember that a stack actually grows
 ; downwards, so we declare the size of the data before declaring
@@ -566,4 +633,3 @@ irq_common_stub:
 SECTION .bss
     resb 32768              ; This reserves 8KBytes of memory here
 _sys_stack:
-

@@ -158,5 +158,16 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     kbdisplay = 1;
     int* val = kmalloc(sizeof(int)*0x1000);
     kfree(val);
-    for (;;) shell_respond();
+    flush_tss();
+    jump_usermode();
+}
+int errno = 0;
+#define SYSCALL(a,b,c,ret) __asm__ ( "int $0x7f" :"=a"(ret) : "a" (a), "b"(b), "c"(c))
+#define SYSCALL_MALLOC(size) SYSCALL(1,0,size,errno)
+#define SYSCALL_MALLOC_ADDR(addr,size) SYSCALL(1,addr,size,errno)
+void user()
+{
+    int ret;
+    SYSCALL_MALLOC_ADDR(0x800000,2);
+    for (;;);// shell_respond();
 }

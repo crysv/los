@@ -1,7 +1,8 @@
 #include <system.h>
 extern void (*out)();
 volatile int state;
-char cmd[128];
+char wcmd[128];
+char rcmd[128];
 int cmdx;
 struct file
 {
@@ -14,12 +15,9 @@ struct file
 extern struct file opendir[32];
 void shel(char c)
 {
-    if(state==0)
-    {
-        if(c=='\b') {cmdx--;cmd[cmdx] = 0;}
-        else if(c=='\n') {state = 1;cmdx = 0;}
-        else {cmd[cmdx] = c;cmdx++;}
-    }
+    if(c=='\b') {cmdx--;wcmd[cmdx] = 0;}
+    else if((c=='\n')&&(state==0)) {memcpy(rcmd,wcmd,128);state = 1;cmdx = 0;}
+    else {wcmd[cmdx] = c;cmdx++;}
 }
 void shell_init()
 {
@@ -41,12 +39,13 @@ void shell_respond()
     //printf_("resp:%d\n",num);
     if (state == 1)
     {
-        if((cmd[0]=='d'||cmd[0]=='D')&&
-           (cmd[1]=='i'||cmd[1]=='I')&&
-           (cmd[2]=='r'||cmd[2]=='R'))
+
+        if((rcmd[0]=='d'||rcmd[0]=='D')&&
+           (rcmd[1]=='i'||rcmd[1]=='I')&&
+           (rcmd[2]=='r'||rcmd[2]=='R'))
         {
-            if(atoi(&cmd[4])==0) fat_load_dir(root(),1);
-            fat_load_dir(cluster2sector(atoi(&cmd[4])),1);
+            if(atoi(&rcmd[4])==0) fat_load_dir(root(),1);
+            fat_load_dir(cluster2sector(atoi(&rcmd[4])),1);
         }
         /*if((cmd[0]=='c'||cmd[0]=='C')&&
            (cmd[1]=='d'||cmd[1]=='D'))
@@ -59,18 +58,18 @@ void shell_respond()
             }
             printf_("%s",buffer);
             for (int i = 0;i<32;i++)
-            { 
-                
+            {
+
             }
         }*/
-        if((cmd[0]=='r'||cmd[0]=='R')&&
-           (cmd[1]=='e'||cmd[1]=='E')&&
-           (cmd[2]=='a'||cmd[2]=='A')&&
-           (cmd[3]=='d'||cmd[3]=='D'))
+        if((rcmd[0]=='r'||rcmd[0]=='R')&&
+           (rcmd[1]=='e'||rcmd[1]=='E')&&
+           (rcmd[2]=='a'||rcmd[2]=='A')&&
+           (rcmd[3]=='d'||rcmd[3]=='D'))
         {
             uint32_t* target;
-            if(atoi(&cmd[5])==0) read_sectors_ATA_PIO(target,0, root(), sectors_per_cluster);
-            read_sectors_ATA_PIO(target,0, cluster2sector(atoi(&cmd[5])), sectors_per_cluster);
+            if(atoi(&rcmd[5])==0) read_sectors_ATA_PIO(target,0, root(), sectors_per_cluster);
+            read_sectors_ATA_PIO(target,0, cluster2sector(atoi(&rcmd[5])), sectors_per_cluster);
             //struct file* file = ;//else if ()
             int i = 0;
             /*while(i < 512*sectors_per_cluster)
@@ -80,20 +79,20 @@ void shell_respond()
             }*/
             printf_("%s\n",target);//printf_("name:%s ext:%s cluster:%x\n",file->name,file->ext,file->cluster);
         }
-        if((cmd[0]=='e'||cmd[0]=='E')&&
-           (cmd[1]=='x'||cmd[1]=='X')&&
-           (cmd[2]=='e'||cmd[2]=='E')&&
-           (cmd[3]=='c'||cmd[3]=='C'))
+        if((rcmd[0]=='e'||rcmd[0]=='E')&&
+           (rcmd[1]=='x'||rcmd[1]=='X')&&
+           (rcmd[2]=='e'||rcmd[2]=='E')&&
+           (rcmd[3]=='c'||rcmd[3]=='C'))
         {
-            exec(atoi(&cmd[5]));
+            exec(atoi(&rcmd[5]));
         }
-        if((cmd[0]=='b'||cmd[0]=='B')&&
-           (cmd[1]=='i'||cmd[1]=='I')&&
-           (cmd[2]=='n'||cmd[2]=='N'))
+        if((rcmd[0]=='b'||rcmd[0]=='B')&&
+           (rcmd[1]=='i'||rcmd[1]=='I')&&
+           (rcmd[2]=='n'||rcmd[2]=='N'))
         {
-            binexec(atoi(&cmd[4]));
+            binexec(atoi(&rcmd[4]));
         }
-        memset(cmd,0,sizeof(char)*128);
+        memset(rcmd,0,sizeof(char)*128);
         state = 0;
     }
 }
@@ -102,5 +101,3 @@ void shell(char* c)
 {
 
 }
-
-
