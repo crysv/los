@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include "../../include/libfeat.h"
 void removeChar(char *str, char garbage) {
 
     char *src, *dst;
@@ -65,13 +64,7 @@ int rgot(char* name)
             char* substr = &line[7];
             bool lib = false;
             removeChar(line,'\n');
-            for(int i = 0;i < libflsize;i++)
-                if (strcmp(libflist[i],substr)==0)
-                    lib = true;
-            if (!lib)
-            {
-                removeChar(line,'*');
-            }
+            removeChar(line,'*');
             printf("%s\n", line);
             strcat(line,"\n");
         }

@@ -7,13 +7,12 @@
 
 /* This will keep track of how many ticks that the system
 *  has been running for */
-int timer_ticks = 0;
+volatile int timer_ticks = 0;
 
 /* Handles the timer. In this case, it's very simple: We
 *  increment the 'timer_ticks' variable every time the
 *  timer fires. By default, the timer fires 18.222 times
-*  per second. Why 18.222Hz? Some engineer at IBM must've
-*  been smoking something funky */
+*  per second. Why 18.222Hz?*/
 void timer_handler(struct regs *r)
 {
     /* Increment our 'tick count' */
@@ -31,6 +30,9 @@ void timer_handler(struct regs *r)
 *  been reached */
 void timer_wait(int ticks)
 {
+    uint16_t count = 5;
+    outportb(0x40,count & 0xff);
+    outportb(0x40,(count >> 8) & 0xff);
     unsigned long eticks;
 
     eticks = timer_ticks + ticks;
@@ -41,6 +43,12 @@ void timer_wait(int ticks)
 *  into IRQ0 */
 void timer_install()
 {
+    int freq = 1000;
+    uint16_t divisor = (uint16_t)( 1193181 / (uint16_t)freq);
     /* Installs 'timer_handler' to IRQ0 */
     irq_install_handler(0, timer_handler);
+    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
+    outportb(0x43,0x38);
+    outportb(0x40,divisor & 0xff);
+    outportb(0x40,(divisor >> 8) & 0xff);
 }

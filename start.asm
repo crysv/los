@@ -69,8 +69,9 @@ flush_tss:
     ret
 
 global jump_usermode
-extern user
 jump_usermode:
+    mov ebx, [esp+4]
+    mov ecx, [esp+8]
 	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
 	mov ds, ax
 	mov es, ax
@@ -78,12 +79,11 @@ jump_usermode:
 	mov gs, ax ; SS is handled by iret
 
 	; set up the stack frame iret expects
-	mov eax, esp
 	push (4 * 8) | 3 ; data selector
-	push eax ; current esp
+	push ecx ; current esp
 	pushf ; eflags
 	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
-	push user ; instruction address to return to
+	push ebx ; instruction address to return to
 	iret
 
 ;set paging directory
@@ -590,39 +590,36 @@ global _syscall_stub
 extern _syscall
 _syscall_stub:
     ; already on stack: ss, sp, flags, cs, ip.
-    ; need to push ax, gs, fs, es, ds, -ENOSYS, bp, di, si, dx, cx, and bx
-    push eax
+    ; need to push ax, gs, fs, es, ds, bp, di, si, dx, cx, and bx
     push gs
     push fs
     push es
     push ds
-    push ebp
     push edi
     push esi
     push edx
     push ecx
     push ebx
-    push esp
+    push edx
+    push ecx
+    push ebx
     push eax
     mov ax, 0x10
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-    pop eax
     call _syscall
-    add esp, 4
+    add esp, 16
     pop ebx
     pop ecx
     pop edx
     pop esi
     pop edi
-    pop ebp
     pop ds
     pop es
     pop fs
     pop gs
-    add esp, 4
     iretd
 
 
@@ -630,6 +627,7 @@ _syscall_stub:
 ; it just to store the stack. Remember that a stack actually grows
 ; downwards, so we declare the size of the data before declaring
 ; the identifier '_sys_stack'
+global _sys_stack
 SECTION .bss
-    resb 32768              ; This reserves 8KBytes of memory here
+    resb 32768              ; This reserves 32KBytes of memory here
 _sys_stack:

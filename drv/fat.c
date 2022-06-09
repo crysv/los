@@ -97,6 +97,25 @@ struct file* fat_dir_index(int sector,int i)
     return &openfile;
 }
 struct file opendir[32];
+int fat_dir_find(int sector,char name[11])
+{
+    if (fat_type==16){
+        uint8_t* target;
+        read_sectors_ATA_PIO(target,0, sector, sectors_per_cluster);
+        for(int i = 0;;i++)
+        {
+            if (target[i*0x40+0x20]==0x0) break;
+            for(int e = 0;e < 11;e++)
+            {
+                if (target[(i*0x40+0x20)+e]!=name[e])
+                    break;
+                if (e == 10)
+                    return ((uint16_t)target[(i*0x40+0x20)+0x1B] << 8) | target[(i*0x40+0x20)+0x1A];
+            }
+        }
+    }
+    else{ puts("fat16 only");return; }
+}
 int fat_load_dir(int sector,int print)
 {
    if (fat_type==16){

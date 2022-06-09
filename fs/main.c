@@ -1,8 +1,8 @@
 int main()
 {
-    void* malloc = kmalloc(100);
-    kfree(malloc);
-    puts("hello\n");
-    some_call();
-	return 0;
+    debug_call();
+    void* e = malloc(100);
+    free(e);
+    //puts("hello\n");
+    return 0;
 }

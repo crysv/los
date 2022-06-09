@@ -90,7 +90,7 @@ void shell_respond()
            (rcmd[1]=='i'||rcmd[1]=='I')&&
            (rcmd[2]=='n'||rcmd[2]=='N'))
         {
-            binexec(atoi(&rcmd[4]));
+            binload(atoi(&rcmd[4]));
         }
         memset(rcmd,0,sizeof(char)*128);
         state = 0;

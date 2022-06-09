@@ -88,13 +88,6 @@ void gdt_set_gate(int num, unsigned long base, unsigned long limit, unsigned cha
 tss_entry_t tss_entry;
 extern uint32_t _sys_stack;
 
-static inline unsigned long read_stack(void)
-{
-    unsigned long val;
-    asm volatile ( "mov %%esp, %0" : "=r"(val) );
-    return val;
-}
-
 void gdt_install()
 {
     /* Setup the GDT pointer and limit */
@@ -125,7 +118,7 @@ void gdt_install()
     memset(&tss_entry, 0, sizeof tss_entry);
 
     tss_entry.ss0 = 0x10;
-    tss_entry.esp0 = read_stack();
+    tss_entry.esp0 = &_sys_stack;
     //tss_entry.cs   = 0x1b;
     //tss_entry.ss = tss_entry.ds = tss_entry.es = tss_entry.fs = tss_entry.gs = 0x23;
 

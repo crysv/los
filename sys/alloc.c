@@ -4,7 +4,7 @@
 #define ALLOC_FREE 0x0
 #define ALLOC_BODY 0xff
 #define ERR_NOMEM 0x0
-#define ALLOC_DEBUG
+//#define ALLOC_DEBUG
 uint32_t hmem;
 extern char end[];
 uint8_t* bitmap;
@@ -55,10 +55,11 @@ void kfree(void* addr)
     printf_(" addr:%x",mem + index*BLOCKSIZE);
     printf_(" size:%d\n",bitmap[index]);
 #endif
-    for (int i = 0;i < bitmap[index];i++) {
+    int size = bitmap[index];
+    for (int i = 0;i < size;i++) {
         bitmap[index+i] = ALLOC_FREE;
     }
-    page_addr(0,addr,0,bitmap[index]);
+    page_addr(0,addr,0,size);
 }
 /*void* kmalloc_resv(int addr,int size)
 {
@@ -124,8 +125,8 @@ void* kmalloc_addr(void* addr,int size)
 #endif
                     bitmap[oldold] = request;
                     if (addr == 0)
-                         return page_addr(mem + oldold*BLOCKSIZE,mem + oldold*BLOCKSIZE,3,request);
-                    else return page_addr(mem + oldold*BLOCKSIZE,addr,3,request);
+                         return page_addr(mem + oldold*BLOCKSIZE,mem + oldold*BLOCKSIZE,7,request);
+                    else return page_addr(mem + oldold*BLOCKSIZE,addr,7,request);
                 }
                 count++;
             }
