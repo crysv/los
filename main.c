@@ -155,10 +155,15 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     fat_load_dir(root(),1);
     shell_init();
     kbdisplay = 1;
-    int* val = kmalloc(sizeof(int)*0x1000);
-    kfree(val);
+    proc = kmalloc(sizeof(uint32_t)*255);
+    memset(proc,0,sizeof(uint32_t)*255);
     uint32_t entry = binload(fat_dir_find(root(),"MAIN    BIN"));
     outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
     flush_tss();
-    jump_usermode(entry,kmalloc(0x4000)+0x3ff0);
+    jump_usermode(entry,malloc(0x4000)+0x3ff0);
+}
+uint32_t* proc;
+uint32_t init(uint32_t b,uint32_t c,uint32_t d)
+{
+    proc = b;
 }

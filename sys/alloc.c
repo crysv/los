@@ -89,10 +89,8 @@ void kfree(void* addr)
 #endif
     return oldaddr;
 }*/
-extern uint32_t page_directory[1024];
-extern
-//uint8_t allocation[1024*1024];
-void* kmalloc_addr(void* addr,int size)
+//extern uint32_t page_directory[1024];
+void* malloc_addr(void* addr,int size)
 {
     if (!size) return 0x0;
     int request;
@@ -102,7 +100,7 @@ void* kmalloc_addr(void* addr,int size)
         size+=BLOCKSIZE;
     }
     request = size>>12;
-    for(int i = 0;i<blocks;i++)
+    for(int i = 1024;i<blocks;i++)
     {
         if (bitmap[i]==ALLOC_FREE)
         {
@@ -127,6 +125,53 @@ void* kmalloc_addr(void* addr,int size)
                     if (addr == 0)
                          return page_addr(mem + oldold*BLOCKSIZE,mem + oldold*BLOCKSIZE,7,request);
                     else return page_addr(mem + oldold*BLOCKSIZE,addr,7,request);
+                }
+                count++;
+            }
+        }
+    }
+    puts("kmalloc: no memory\n");
+    return ERR_NOMEM;
+}
+void* malloc(int size)
+{
+    malloc_addr(0,size);
+}
+void* kmalloc_addr(void* addr,int size)
+{
+    if (!size) return 0x0;
+    int request;
+    if (size&(BLOCKSIZE-1))
+    {
+        size&=~(BLOCKSIZE-1);
+        size+=BLOCKSIZE;
+    }
+    request = size>>12;
+    for(int i = 0;i<1024;i++)
+    {
+        if (bitmap[i]==ALLOC_FREE)
+        {
+            int old = i;
+            int oldold = i;
+            int count = 1;
+            for(;i<blocks;i++)
+            {
+                if (bitmap[i]!=ALLOC_FREE) break;
+                if (count == request)
+                {
+                    for(;old<i+1;old++)
+                    {
+                        bitmap[old] = ALLOC_BODY;
+                    }
+#ifdef ALLOC_DEBUG
+                    printf_("kmalloc: index:%x",oldold);
+                    printf_(" addr:%x",mem + oldold*BLOCKSIZE);
+                    printf_(" size:%d\n",request);
+#endif
+                    bitmap[oldold] = request;
+                    if (addr == 0)
+                         return page_addr(mem + oldold*BLOCKSIZE,mem + oldold*BLOCKSIZE,7,request);
+                    else return page_addr(mem + oldold*BLOCKSIZE,addr,3,request);
                 }
                 count++;
             }

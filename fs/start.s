@@ -7,7 +7,7 @@ outportw:
 	movl	4(%esp), %edx
 	movl	8(%esp), %eax
 /APP
-/  10 "start.c" 1
+/  8 "start.c" 1
 	outw %ax, %dx
 /  0 "" 2
 /NO_APP
@@ -17,15 +17,23 @@ outportw:
 	.globl	start
 	.type	start, @function
 start:
-	subl	$24, %esp
+	pushl	%ebx
+	subl	$20, %esp
+	movl	$0, %eax
+	movl	%eax, %ebx
+	movl	%eax, %ecx
 /APP
-/  15 "start.c" 1
+/  14 "start.c" 1
+	int $0x7f
+/  0 "" 2
+/  17 "start.c" 1
 	call main
 /  0 "" 2
 /NO_APP
 	pushl	%eax
 	call	exit
-	addl	$28, %esp
+	addl	$24, %esp
+	popl	%ebx
 	ret
 	.size	start, .-start
 	.section	.text.debug_call,"ax",@progbits
@@ -35,13 +43,13 @@ debug_call:
 	movl	$-30208, %edx
 	movl	%edx, %eax
 /APP
-/  10 "start.c" 1
+/  8 "start.c" 1
 	outw %ax, %dx
 /  0 "" 2
 /NO_APP
 	movl	$-29984, %eax
 /APP
-/  10 "start.c" 1
+/  8 "start.c" 1
 	outw %ax, %dx
 /  0 "" 2
 /NO_APP

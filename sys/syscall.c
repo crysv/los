@@ -8,9 +8,10 @@ typedef uint32_t (*syscall_t)(uint32_t b,uint32_t c,uint32_t d);
 CALLWRAP(malloc_call,kmalloc_addr((void*)b,(int)c))
 CALLWRAP(free_call,kfree((void*)b))
 CALLWRAP(exit_call,for(;;))
+extern uint32_t init(uint32_t b,uint32_t c,uint32_t d);
 syscall_t calltable[] =
 {
-    NULL,
+    init,
     malloc_call,
     free_call,
     exit_call

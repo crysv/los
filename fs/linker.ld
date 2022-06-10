@@ -10,7 +10,12 @@ SECTIONS
     }
     .text :
     {
-        *(.*)
+        EXCLUDE_FILE(*lib.o) *(.*)
         main = main;
+    }
+    lib = .;
+    .lib :
+    {
+        *(.*)
     }
 }

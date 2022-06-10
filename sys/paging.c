@@ -109,8 +109,8 @@ void paging_install(uint32_t endmem)
     struct page_addr endmemp = virt2page(endmem);
     lasttable = endmemp.table;
     // attributes: supervisor level, read/write, present
-    page_directory[0] = ((unsigned int)kernel_page_table) | 7;
-    page_directory[1] = ((unsigned int)page_page_table) | 7;
+    page_directory[0] = ((unsigned int)kernel_page_table) | 3;
+    page_directory[1] = ((unsigned int)page_page_table) | 3;
     page_directory[fbp.table] = ((unsigned int)framebuffer_table) | 3;
     table_present[0] = true;
     table_present[1] = true;
