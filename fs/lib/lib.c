@@ -1,0 +1,10 @@
+#define SYSCALL(a,b,c,d,ret) __asm__ __volatile__ ( "int $0x7f" :"=a"(ret) : "a" (a), "b"(b), "c"(c), "d"(d))
+#define VSYSCALL(a,b,c,d) __asm__ __volatile__ ( "int $0x7f" : : "a" (a), "b"(b), "c"(c), "d"(d))
+#define SYSCALL_MALLOC(size,_ret) SYSCALL(1,0,size,0,_ret)
+#define SYSCALL_MALLOC_ADDR(addr,size,_ret) SYSCALL(1,addr,size,0,_ret)
+#define SYSCALL_FREE(addr) VSYSCALL(2,addr,0,0)
+#define SYSCALL_EXIT(code) VSYSCALL(3,code,0,0)
+#define CALLWRAP(type,macro) { type _ret; macro ;return _ret;}
+void* malloc(int size) CALLWRAP(void*,SYSCALL_MALLOC(size,_ret))
+void free(void* addr)  CALLWRAP(void*,SYSCALL_FREE(addr))
+void exit(int code)    CALLWRAP(void*,SYSCALL_EXIT(code))

@@ -10,12 +10,9 @@ SECTIONS
     }
     .text :
     {
-        EXCLUDE_FILE(*lib.o) *(.*)
+        *(.*)
         main = main;
     }
-    lib = .;
-    .lib :
-    {
-        *(.*)
-    }
+    . = ALIGN(4096);
+    libbase = .;
 }

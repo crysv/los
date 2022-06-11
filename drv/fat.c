@@ -115,6 +115,7 @@ int fat_dir_find(int sector,char name[11])
         }
     }
     else{ puts("fat16 only");return; }
+    return 0;
 }
 int fat_load_dir(int sector,int print)
 {
