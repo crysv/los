@@ -155,15 +155,34 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     fat_load_dir(root(),1);
     shell_init();
     kbdisplay = 1;
-    proc = kmalloc(sizeof(uint32_t)*255);
-    memset(proc,0,sizeof(uint32_t)*255);
-    uint32_t entry = binload(fat_dir_find(root(),"MAIN    BIN"));
-    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
+    uint32_t entry = binload(fat_dir_find(root(),"MAIN    BIN"),0x8000000);
     flush_tss();
+    //proc = kmalloc(sizeof(proc_t));
     jump_usermode(entry,malloc(0x4000)+0x3ff0);
 }
-uint32_t* proc;
+uint32_t* buffer;
+uint32_t loadlibs()
+{
+    for(size_t i = 0; i < 32; i+=2) {
+        if (!buffer[i]||!buffer[i+1]) return 0;
+        char name[12];
+        memcpy(name,(char*)buffer[i],11);
+        name[12] = 0x0;
+        int clus = fat_dir_find(root(),name);
+        printf_("lib:%s clus:%d\n",name,clus);
+        if (!clus) return -1;
+        binload(clus,buffer[i+1]);
+    }
+}
 uint32_t init(uint32_t b,uint32_t c,uint32_t d)
 {
-    proc = b;
+    switch (b)
+    {
+    case 0:
+        buffer = c;
+        break;
+    case 1:
+        return loadlibs();
+    }
+    return 0;
 }

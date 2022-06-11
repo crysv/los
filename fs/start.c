@@ -7,13 +7,19 @@ void outportw (unsigned short _port, uint16_t _data)
 {
     __asm__ __volatile__ ("outw %1, %0" : : "dN" (_port), "a" (_data));
 }
-#define SYSCALL(a,b,c,ret) __asm__ __volatile__ ( "int $0x7f" :"=a"(ret) : "a" (a), "b"(b), "c"(c))
+#define VSYSCALL(a,b,c,d) __asm__ __volatile__ ( "int $0x7f" : : "a" (a), "b"(b), "c"(c), "d"(d))
+extern char libbase[];
+volatile uint32_t _buf[32];
 int start()
 {
-    uint8_t* _ret;
-    SYSCALL(0,0,0,_ret);
-    _ret[0x0];
+    VSYSCALL(0,0,_buf,0);
+    _buf[0] = "LIB     BIN";
+    _buf[1] = libbase;
+    _buf[2] = 0x0;
+    _buf[3] = 0x0;
+    VSYSCALL(0,1,0,0);
     int retval;
+    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
     __asm__ __volatile__ ("call main" : "=a"(retval));
     exit(retval);
 }

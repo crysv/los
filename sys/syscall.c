@@ -18,8 +18,7 @@ syscall_t calltable[] =
 };
 uint32_t _syscall(uint32_t a,uint32_t b,uint32_t c,uint32_t d)
 {
-    printf_("eax:%x ebx:%x ecx:%x edx:%x ",a,b,c,d);
     uint32_t ret = calltable[a](b,c,d);
-    printf_("ret:%x\n",ret);
+    printf_("eax:0x%08x ebx:0x%08x ecx:0x%08x edx:0x%08x ret:0x%08x\n",a,b,c,d,ret);
     return ret;
 }
