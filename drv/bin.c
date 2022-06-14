@@ -7,3 +7,9 @@ void* binload(int clus,uint32_t addr)
     int (*entry)() = target;
     return entry;//entry();
 }
+void* binloadpic(int clus,uint32_t addr)
+{
+    read_sectors_ATA_PIO(addr,0, cluster2sector(clus), sectors_per_cluster);
+    int (*entry)() = addr;
+    return entry;//entry();
+}

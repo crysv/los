@@ -8,6 +8,7 @@ void outportw (unsigned short _port, uint16_t _data)
     __asm__ __volatile__ ("outw %1, %0" : : "dN" (_port), "a" (_data));
 }
 #define VSYSCALL(a,b,c,d) __asm__ __volatile__ ( "int $0x7f" : : "a" (a), "b"(b), "c"(c), "d"(d))
+#define YEILD __asm__ __volatile__ ( "int $0x7e" : : )
 extern char libbase[];
 volatile uint32_t _buf[32];
 int start()
@@ -19,7 +20,7 @@ int start()
     _buf[3] = 0x0;
     VSYSCALL(0,1,0,0);
     int retval;
-    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
+    YEILD;
     __asm__ __volatile__ ("call main" : "=a"(retval));
     exit(retval);
 }

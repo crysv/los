@@ -68,24 +68,6 @@ flush_tss:
     ltr ax
     ret
 
-global jump_usermode
-jump_usermode:
-    mov ebx, [esp+4]
-    mov ecx, [esp+8]
-	mov ax, (4 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax ; SS is handled by iret
-
-	; set up the stack frame iret expects
-	push (4 * 8) | 3 ; data selector
-	push ecx ; current esp
-	pushf ; eflags
-	push (3 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
-	push ebx ; instruction address to return to
-	iret
-
 ;set paging directory
 global loadPageDirectory
 loadPageDirectory:
@@ -585,6 +567,25 @@ irq_common_stub:
     popa
     add esp, 8
     iret
+
+global _yeild_stub
+extern savetask
+extern nexttask
+_yeild_stub:
+    push dword [esp+12]
+    push dword [esp+12]
+    push dword [esp+8]
+    push ebp
+    push edi
+    push esi
+    push edx
+    push ecx
+    push ebx
+    push eax
+    mov eax, cr3
+    push eax
+    call savetask
+    call nexttask
 
 global _syscall_stub
 extern _syscall

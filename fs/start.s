@@ -27,7 +27,7 @@ start:
 	movl	%eax, %ebx
 	movl	%eax, %edx
 /APP
-/  15 "start.c" 1
+/  16 "start.c" 1
 	int $0x7f
 /  0 "" 2
 /NO_APP
@@ -38,23 +38,13 @@ start:
 	movl	$1, %ebx
 	movl	%eax, %ecx
 /APP
-/  20 "start.c" 1
+/  21 "start.c" 1
 	int $0x7f
 /  0 "" 2
-/NO_APP
-	movl	$-30208, %edx
-	movl	%edx, %eax
-/APP
-/  8 "start.c" 1
-	outw %ax, %dx
-/  0 "" 2
-/NO_APP
-	movl	$-29984, %eax
-/APP
-/  8 "start.c" 1
-	outw %ax, %dx
-/  0 "" 2
 /  23 "start.c" 1
+	int $0x7e
+/  0 "" 2
+/  24 "start.c" 1
 	call main
 /  0 "" 2
 /NO_APP

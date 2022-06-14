@@ -49,6 +49,7 @@ void table_set(int index,void* addr,int attr)
     page_directory[index] = (unsigned int)addr | attr;
     dir_ent_inval(index);
 }*/
+uint32_t* currpdir;
 void* page_addr(uint32_t phys,uint32_t addr,int attr,int size)
 {
     addr&=~(0xfff);
@@ -62,7 +63,7 @@ void* page_addr(uint32_t phys,uint32_t addr,int attr,int size)
     {
         struct page_addr page = virt2page(addr);
         if (!table_present[page.table]) return 0;
-        uint32_t table_value = page_directory[page.table];
+        uint32_t table_value = currpdir[page.table];
         uint32_t* page_table = table_value & ~(0xfff);
         page_table[page.page] = (unsigned int)phys | attr;
         invlpg(addr);
