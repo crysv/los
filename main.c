@@ -74,6 +74,11 @@ struct cpuid_t{
     bool apic;
     bool msr;
 };
+typedef struct lib_t {
+    uint32_t phys;
+    char name[12];
+    struct lib_t *next;
+} lib_t;
 struct cpuid_t cpuid;
 char *fb;
 int scanline;
@@ -81,6 +86,7 @@ int height;
 int taskidx;
 Task *tasklist[32];
 Task *currtask;
+lib_t *libstart;
 extern char start[];
 extern char end[];
 extern int sectors_per_cluster;
@@ -101,6 +107,7 @@ uint32_t eflags_read()
 currtask = task ; \
 currpdir = task ->regs.cr3; \
 loadPageDirectory( task ->regs.cr3);\
+outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);\
 __asm__ __volatile__ (\
 "pushl %%eax; \
  movw $0x23, %%ax; \
@@ -218,16 +225,22 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     flush_tss();
     uint32_t* pdir;
     NEWTASK(0,binload(fat_dir_find(root(),"MAIN    BIN"),0x8000000));
+    uint32_t phys = binloadpic(fat_dir_find(root(),"LIB     BIN"));
+    libstart = malloc(sizeof(lib_t));
+    libstart->phys = phys;
+    memcpy(libstart->name,"LIB     BIN\0",12);
+    libstart->next = 0;
     nexttask();
     //jump_usermode(task->regs.eip,task->regs.esp);
 }
 void nexttask()
 {
-    int taskidxo = taskidx;
+    int times = 0;
     do
     {
         taskidx++; if (taskidx==32) taskidx = 0;
-        if (taskidxo == taskidx) {puts("\ntasklist empty");for(;;);}
+        if (times == 32) {puts("\ntasklist empty");for(;;);}
+        times++;
     }
     while (!tasklist[taskidx]||!tasklist[taskidx]->active);
     LOADTASK(tasklist[taskidx]);
@@ -266,7 +279,6 @@ void createTask(Task *task,int idx,void (*main)(), uint32_t flags, uint32_t *pag
     task->idx         = idx;
     tasklist[idx]     = task;
 }
-
 uint32_t loadlibs()
 {
     for(size_t i = 0; i < 32; i+=2) {
@@ -277,7 +289,24 @@ uint32_t loadlibs()
         int clus = fat_dir_find(root(),name);
         printf_("lib:%s clus:%d\n",name,clus);
         if (!clus) return -1;
-        binload(clus,currtask->buffer[i+1]);
+        for(lib_t* currlib = libstart;;currlib=currlib->next)
+        {
+            if (currlib->name==name)
+            {
+                page_addr(currlib->phys,currtask->buffer[i+1],7,1);
+                break;
+            }
+            if (currlib->next==0)
+            {
+                uint32_t phys = binloadpic(clus);
+                currlib->next = malloc(sizeof(lib_t));
+                currlib->next->phys = phys;
+                memcpy(currlib->next->name,name,12);
+                currlib->next->next = 0;
+                page_addr(phys,currtask->buffer[i+1],7,1);
+                break;
+            }
+        }
     }
 }
 uint32_t init(uint32_t b,uint32_t c,uint32_t d)
