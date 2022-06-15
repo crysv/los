@@ -129,8 +129,9 @@ __asm__ __volatile__ (\
 "g"( task ->regs.eax));
 #define NEWTASK(idx,func)\
 pdir = kmalloc(sizeof(uint32_t)*1024); \
-memcpy(pdir,page_directory,sizeof(uint32_t)*1024); \
+createpdir(pdir); \
 currpdir = pdir; \
+loadPageDirectory(pdir); \
 createTask(kmalloc(sizeof(Task)), idx , func ,eflags_read(),pdir);
 void main (multiboot_info_t* mbd, unsigned int magic)
 {
@@ -189,7 +190,7 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     }
     alloc_install();
     currpdir = page_directory;
-    paging_install(endmem);
+    paging_install();
 
     listmem();
 
@@ -217,8 +218,6 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     flush_tss();
     uint32_t* pdir;
     NEWTASK(0,binload(fat_dir_find(root(),"MAIN    BIN"),0x8000000));
-    NEWTASK(1,binload(fat_dir_find(root(),"MAIN    BIN"),0x8000000));
-    outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);
     nexttask();
     //jump_usermode(task->regs.eip,task->regs.esp);
 }
@@ -254,7 +253,6 @@ void freetask(Task *task)
     currpdir = page_directory;
     kfree(task->regs.cr3);
     tasklist[task->idx] = 0;
-    kfree(task);
 }
 void createTask(Task *task,int idx,void (*main)(), uint32_t flags, uint32_t *pagedir) {
     memset(task,0,sizeof(Task));
