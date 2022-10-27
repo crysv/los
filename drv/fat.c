@@ -104,7 +104,7 @@ int fat_dir_find(int sector,char name[11])
         read_sectors_ATA_PIO(target,0, sector, sectors_per_cluster);
         for(int i = 0;;i++)
         {
-            if (target[i*0x40+0x20]==0x0) break;
+            if (target[i*0x40+0x20]==0x0 ) break;
             for(int e = 0;e < 11;e++)
             {
                 if (target[(i*0x40+0x20)+e]!=name[e])

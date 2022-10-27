@@ -19,7 +19,7 @@ kernel.bin: $(OBJFILES)
 	nm  kernel.bin | grep " T " | sed -r 's/(\s+)?\S+//2' > kernel.sym
 
 %.o: %.c
-	i386-elf-gcc -Wall -Wno-implicit-function-declaration -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -I./include -c -o $@ $<
+	i386-elf-gcc -Wall -Wno-implicit-function-declaration -O -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -I./include -c -o $@ $< -lgcc -lc
 
 %.o: %.asm
 	nasm -f elf32 -o $@ $<

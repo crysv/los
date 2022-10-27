@@ -44,7 +44,7 @@ void listmem()
     printf_("mem:%x\n",mem);
 
 }
-void kfree(void* addr)
+void free(void* addr)
 {
     if (!addr) return;
     if (addr < mem) {puts("kfree: address below range\n");return;}
@@ -61,35 +61,6 @@ void kfree(void* addr)
     }
     page_addr(0,addr,0,size);
 }
-/*void* kmalloc_resv(int addr,int size)
-{
-    if (addr&(BLOCKSIZE-1))
-    {
-        addr&=~(BLOCKSIZE-1);
-        addr+=BLOCKSIZE;
-    }
-    int end = addr + size;
-    if (end&(BLOCKSIZE-1))
-    {
-        end&=~(BLOCKSIZE-1);
-        end+=BLOCKSIZE;
-    }
-
-    int index = ((int)addr-(int)mem)/BLOCKSIZE;
-    int oldaddr = addr;
-#ifdef ALLOC_DEBUG
-    int oldindex = index;
-#endif
-    for (;addr <= end;addr+=BLOCKSIZE)
-        bitmap[index++] = RESERVED;
-#ifdef ALLOC_DEBUG
-    printf_("kmalloc_resv: index:%x",oldindex);
-    printf_(" addr:%x",oldaddr);
-    printf_(" size:%x\n",((end-addr)/BLOCKSIZE)+1);
-#endif
-    return oldaddr;
-}*/
-//extern uint32_t page_directory[1024];
 void* malloc_addr(void* addr,int size)
 {
     if (!size) return 0x0;
@@ -130,7 +101,7 @@ void* malloc_addr(void* addr,int size)
             }
         }
     }
-    puts("kmalloc: no memory\n");
+    puts("malloc: no memory\n");
     return ERR_NOMEM;
 }
 void* malloc(int size)

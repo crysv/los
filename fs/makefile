@@ -1,9 +1,9 @@
-SRCFILES := $(shell find "." -not  -path "./lib/*" -type f -name "*.c")
+SRCFILES := $(shell find "." -not  -path "./lib*/*" -type f -name "*.c")
 ASMFILES := $(patsubst %.c,%.s,$(SRCFILES))
 OBJFILES := $(patsubst %.c,%.o,$(SRCFILES))
 #--print-map
 all: s bin
-	i386-elf-ld --print-map -Tlinker.ld -Tlib/lib.ld $(OBJFILES) -o main.bin
+	i386-elf-ld --print-map -Tlinker.ld -Tlib/lib.ld -Tlibg/libg.ld $(OBJFILES) -o main.bin
 	objdump -b binary --adjust-vma=0x8000000 -D main.bin -m i386
 
 %.s: %.c

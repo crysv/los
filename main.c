@@ -64,6 +64,7 @@ typedef struct {
 } Registers;
 typedef struct Task {
     Registers regs;
+    uint32_t* stack;
     uint32_t* buffer;
     int idx;
     bool active;
@@ -83,10 +84,13 @@ struct cpuid_t cpuid;
 char *fb;
 int scanline;
 int height;
+int width;
 int taskidx;
 Task *tasklist[32];
 Task *currtask;
 lib_t *libstart;
+extern int csr_x;
+extern int csr_y;
 extern char start[];
 extern char end[];
 extern int sectors_per_cluster;
@@ -107,7 +111,6 @@ uint32_t eflags_read()
 currtask = task ; \
 currpdir = task ->regs.cr3; \
 loadPageDirectory( task ->regs.cr3);\
-outportw(0x8A00,0x8A00); outportw(0x8A00,0x08AE0);\
 __asm__ __volatile__ (\
 "pushl %%eax; \
  movw $0x23, %%ax; \
@@ -135,11 +138,7 @@ __asm__ __volatile__ (\
 "g"( task ->regs.ebx),\
 "g"( task ->regs.eax));
 #define NEWTASK(idx,func)\
-pdir = kmalloc(sizeof(uint32_t)*1024); \
-createpdir(pdir); \
-currpdir = pdir; \
-loadPageDirectory(pdir); \
-createTask(kmalloc(sizeof(Task)), idx , func ,eflags_read(),pdir);
+createTask(kmalloc(sizeof(Task)), idx , func ,eflags_read(),currpdir);
 void main (multiboot_info_t* mbd, unsigned int magic)
 {
     //init_video();
@@ -147,11 +146,12 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     fb = mbd->framebuffer_addr;
     scanline = mbd->framebuffer_pitch;
     height = mbd->framebuffer_height;
+    width = mbd->framebuffer_width;
     psf_init();
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
         puts("invalid magic");
-        for(;;);
+        for(;;)hlt();
     }
     printf_("start:0x%x end:0x%x\n",start,end);
     cpuid.max = __get_cpuid_max(0,0);
@@ -180,10 +180,10 @@ void main (multiboot_info_t* mbd, unsigned int magic)
         multiboot_memory_map_t* mmmt =
             (multiboot_memory_map_t*) (mbd->mmap_addr + i);
 
-        //printf_("Start Addr: %x ",mmmt->addr);
-        //printf_("| Length: %x ",  mmmt->len);
-        //printf_("| Size: %x ",    mmmt->size);
-        //printf_("| Type: %d \n",  mmmt->type);
+        printf_("Start Addr: %x ",mmmt->addr);
+        printf_("| Length: %x ",  mmmt->len);
+        printf_("| Size: %x ",    mmmt->size);
+        printf_("| Type: %d \n",  mmmt->type);
         if(mmmt->type == MULTIBOOT_MEMORY_AVAILABLE) {
             /*
              * Do something with this memory block!
@@ -208,8 +208,8 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     int lba = 0x0;
     read_sectors_ATA_PIO(target,0, lba, 1);
 
-    i = 0;
-    /*while(i < 512)
+    /*i = 0;
+    while(i < 512)
     {
         printf_("%x",target[i]);
         i++;
@@ -225,13 +225,10 @@ void main (multiboot_info_t* mbd, unsigned int magic)
     flush_tss();
     uint32_t* pdir;
     NEWTASK(0,binload(fat_dir_find(root(),"MAIN    BIN"),0x8000000));
-    uint32_t phys = binloadpic(fat_dir_find(root(),"LIB     BIN"));
     libstart = malloc(sizeof(lib_t));
-    libstart->phys = phys;
+    libstart->phys = binloadpic(fat_dir_find(root(),"LIB     BIN"));
     memcpy(libstart->name,"LIB     BIN\0",12);
-    libstart->next = 0;
     nexttask();
-    //jump_usermode(task->regs.eip,task->regs.esp);
 }
 void nexttask()
 {
@@ -239,7 +236,7 @@ void nexttask()
     do
     {
         taskidx++; if (taskidx==32) taskidx = 0;
-        if (times == 32) {puts("\ntasklist empty");for(;;);}
+        if (times == 32) { csr_y = 28;puts("\nHalted");for(;;)hlt();}
         times++;
     }
     while (!tasklist[taskidx]||!tasklist[taskidx]->active);
@@ -263,8 +260,10 @@ void savetask(uint32_t cr3,uint32_t eax,uint32_t ebx,uint32_t ecx,
 }
 void freetask(Task *task)
 {
-    currpdir = page_directory;
-    kfree(task->regs.cr3);
+    //currpdir = page_directory;
+    free(task->stack);
+    //free(task);
+    //kfree(task->regs.cr3);
     tasklist[task->idx] = 0;
 }
 void createTask(Task *task,int idx,void (*main)(), uint32_t flags, uint32_t *pagedir) {
@@ -272,9 +271,9 @@ void createTask(Task *task,int idx,void (*main)(), uint32_t flags, uint32_t *pag
     task->regs.eflags = flags;
     task->regs.eip    = (uint32_t) main;
     task->regs.cr3    = (uint32_t) pagedir;
-    uint32_t stack    = malloc(0x4000);
-    task->regs.esp    = (uint32_t) stack+0x3ff0;
-    task->regs.ebp    = 0xffffffff;
+    task->stack       = malloc(0x4000);
+    task->regs.esp    = (uint32_t) task->stack+0x3ff0;
+    task->regs.ebp    = (uint32_t) task->stack+0x3ff0;
     task->active      = true;
     task->idx         = idx;
     tasklist[idx]     = task;
@@ -315,9 +314,14 @@ uint32_t init(uint32_t b,uint32_t c,uint32_t d)
     {
     case 0:
         currtask->buffer = c;
-        break;
-    case 1:
         return loadlibs();
+    case 1:
+        uint32_t* vidinfo = (uint32_t*)c;
+        vidinfo[0] = fb;
+        vidinfo[1] = height;
+        vidinfo[2] = width;
+        vidinfo[3] = scanline;
+        vidinfo[4] = 32;
     }
     return 0;
 }

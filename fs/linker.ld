@@ -15,4 +15,6 @@ SECTIONS
     }
     . = ALIGN(4096);
     libbase = .;
+    . += 4096;
+    libgbase = .;
 }

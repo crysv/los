@@ -5,4 +5,5 @@ SECTIONS
     {
         *(.*)
     }
+    end = .;
 }

@@ -93,11 +93,11 @@ void paging_install()
     struct page_addr fbp = virt2page(fb);
     for (i = 0; i < 1024; i++)
     {
-        framebuffer_table[i] = ((i * 0x1000)+(fbp.table*1024*0x1000)) | 3;
+        framebuffer_table[i] = ((i * 0x1000)+(fbp.table*1024*0x1000)) | 7;
     }
     page_directory[0] = ((unsigned int)kernel_page_table) | 3;
     page_directory[1] = ((unsigned int)page_page_table) | 3;
-    page_directory[fbp.table] = ((unsigned int)framebuffer_table) | 3;
+    page_directory[fbp.table] = ((unsigned int)framebuffer_table) | 7;
     puts("paging enable:\n");
     loadPageDirectory(page_directory);
     enablePaging();

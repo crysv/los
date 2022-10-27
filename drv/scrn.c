@@ -154,7 +154,7 @@ void scroll(void)
 *  on the screen under the last character pressed! */
 void move_csr(void)
 {
-    
+
 }
 
 /* Clears the screen */

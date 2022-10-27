@@ -6,7 +6,7 @@ all: $(OBJFILES)
 	nm  lib.o | grep " T " | sed -r 's/(\s+)?\S+//2' > lib.sym
 
 %.o: %.c
-	i386-elf-gcc -fno-pie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fpic $< -c -o $@
+	i386-elf-gcc -fpie -Wall -O -static-libgcc -lgcc -fstrength-reduce -ffreestanding -fomit-frame-pointer -finline-functions -nostdinc -fno-builtin -fno-exceptions -fno-plt -fpic $< -c -o $@
 	objcopy --remove-section .comment $@
 
 clean:

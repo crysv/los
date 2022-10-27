@@ -38,16 +38,16 @@ void checkfunc(uint8_t bus,uint8_t dev,uint8_t fun)
     uint8_t subclass = PCI_GET_SUBCLASS( bus, dev, fun );
     uint8_t class = PCI_GET_CLASS( bus, dev, fun );
     uint8_t progif = PCI_GET_PROGIF( bus, dev, fun );
-    printf_("bus:%02x dev:%02x func:%02x class:%02x subclass:%02x progif:%02x\n",
-             bus,dev,fun,class,subclass,progif);
+    //printf_("bus:%02x dev:%02x func:%02x class:%02x subclass:%02x progif:%02x\n",
+    //         bus,dev,fun,class,subclass,progif);
     uint32_t bar[6] = {PCI_GET_BAR0( bus, dev, fun ),
                        PCI_GET_BAR1( bus, dev, fun ),
                        PCI_GET_BAR2( bus, dev, fun ),
                        PCI_GET_BAR3( bus, dev, fun ),
                        PCI_GET_BAR4( bus, dev, fun ),
                        PCI_GET_BAR5( bus, dev, fun )};
-    printf_("bar0:%x bar1:%x bar2:%x bar3:%x bar4:%x bar5:%x\n",
-             bar[0],bar[1],bar[2],bar[3],bar[4],bar[5]);
+    //printf_("bar0:%x bar1:%x bar2:%x bar3:%x bar4:%x bar5:%x\n",
+    //         bar[0],bar[1],bar[2],bar[3],bar[4],bar[5]);
 }
 void checkAllBuses(void) {
      uint16_t bus;

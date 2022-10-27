@@ -16,35 +16,29 @@ outportw:
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .LC0:
 	.string	"LIB     BIN"
+.LC1:
+	.string	"LIBG    BIN"
 	.section	.text.start,"ax",@progbits
 	.globl	start
 	.type	start, @function
 start:
 	pushl	%ebx
 	subl	$20, %esp
+	movl	$.LC0, _buf
+	movl	$libbase, _buf+4
+	movl	$.LC1, _buf+8
+	movl	$libgbase, _buf+12
+	movl	$0, _buf+16
+	movl	$0, _buf+20
 	movl	$0, %eax
 	movl	$_buf, %ecx
 	movl	%eax, %ebx
 	movl	%eax, %edx
 /APP
-/  16 "start.c" 1
-	int $0x7f
-/  0 "" 2
-/NO_APP
-	movl	$.LC0, _buf
-	movl	$libbase, _buf+4
-	movl	$0, _buf+8
-	movl	$0, _buf+12
-	movl	$1, %ebx
-	movl	%eax, %ecx
-/APP
-/  21 "start.c" 1
-	int $0x7f
-/  0 "" 2
-/  23 "start.c" 1
-	int $0x7e
-/  0 "" 2
 /  24 "start.c" 1
+	int $0x7f
+/  0 "" 2
+/  27 "start.c" 1
 	call main
 /  0 "" 2
 /NO_APP

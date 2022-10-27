@@ -9,18 +9,24 @@ main:
 	pushl	-4(%ecx)
 	pushl	%ebp
 	movl	%esp, %ebp
+	pushl	%ebx
 	pushl	%ecx
-	subl	$4, %esp
+	subl	$32, %esp
 	call	debug_call
 	subl	$12, %esp
-	pushl	$100
-	call	malloc
-	movl	%eax, (%esp)
-	call	free
+	leal	-28(%ebp), %ebx
+	pushl	%ebx
+	call	init
+	addl	$8, %esp
+	pushl	$0
+	pushl	%ebx
+	call	clear
 	addl	$16, %esp
 	movl	$0, %eax
-	movl	-4(%ebp), %ecx
-	leave
+	leal	-8(%ebp), %esp
+	popl	%ecx
+	popl	%ebx
+	popl	%ebp
 	leal	-4(%ecx), %esp
 	ret
 	.size	main, .-main
